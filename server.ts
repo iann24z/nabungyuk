@@ -1,686 +1,211 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import path from "path";
-import fs from "fs";
 import { createServer as createViteServer } from "vite";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
 const PORT = 3000;
-const DB_FILE = path.join(process.cwd(), "database.json");
 
-// Expand payload limits for base64 upload proof files
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ limit: "15mb", extended: true }));
 
-// Dynamic Interfaces matching SQL structure
-interface User {
-  id: number;
-  nama: string;
-  email: string;
-  passwordHash: string;
-  foto_profile: string | null;
-  created_at: string;
-}
-
-interface Kategori {
-  id: number;
-  nama_kategori: string;
-  icon: string;
-}
-
-interface Transaksi {
-  id: number;
-  user_id: number;
-  tipe_transaksi: "pemasukan" | "pengeluaran";
-  nominal: number;
-  metode_pembayaran: string;
-  catatan: string | null;
-  bukti_transfer: string | null; // Base64 transfer proof or mock URL
-  status: "pending" | "berhasil" | "gagal";
-  target_id: number | null; // Associated saving target
-  created_at: string;
-  nama_penyetor: string | null;
-}
-
-interface TargetTabungan {
-  id: number;
-  user_id: number;
-  nama_target: string;
-  target_nominal: number;
-  saldo_terkumpul: number;
-  deadline: string;
-  created_at: string;
-}
-
-interface DatabaseSchema {
-  users: User[];
-  kategori: Kategori[];
-  transaksi: Transaksi[];
-  target_tabungan: TargetTabungan[];
-}
-
-// 1. Initialize and Seed Local Database (Mock mysql database file)
-const defaultKategori: Kategori[] = [
-  { id: 1, nama_kategori: "Holiday", icon: "plane" },
-  { id: 2, nama_kategori: "Food", icon: "utensils" },
-  { id: 3, nama_kategori: "Utilities", icon: "file-text" },
-  { id: 4, nama_kategori: "Coffee", icon: "coffee" },
-  { id: 5, nama_kategori: "Shopping", icon: "shopping-bag" },
-  { id: 6, nama_kategori: "Salary", icon: "dollar-sign" },
-  { id: 7, nama_kategori: "Others", icon: "help-circle" },
-];
-
-function getDB(): DatabaseSchema {
-  if (!fs.existsSync(DB_FILE)) {
-    const freshDb: DatabaseSchema = {
-      users: [
-        {
-          id: 1,
-          nama: "Iyan Maulana",
-          email: "demo@nabungyuk.id",
-          passwordHash: "password123", // Simple plain password for demo
-          foto_profile: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
-          created_at: new Date("2026-05-01T00:00:00Z").toISOString(),
-        }
-      ],
-      kategori: defaultKategori,
-      transaksi: [
-        {
-          id: 1,
-          user_id: 1,
-          tipe_transaksi: "pemasukan",
-          nominal: 95000000,
-          metode_pembayaran: "Transfer Mandiri",
-          catatan: "Gaji Utama Mei",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: null,
-          created_at: "2026-05-02T08:30:00Z",
-          nama_penyetor: "Iyan Maulana"
-        },
-        {
-          id: 2,
-          user_id: 1,
-          tipe_transaksi: "pengeluaran",
-          nominal: 400000,
-          metode_pembayaran: "QRIS GoPay",
-          catatan: "Uniqlo flannel shirt",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: null,
-          created_at: "2026-05-18T14:20:00Z",
-          nama_penyetor: null
-        },
-        {
-          id: 3,
-          user_id: 1,
-          tipe_transaksi: "pengeluaran",
-          nominal: 2000000,
-          metode_pembayaran: "Transfer BCA",
-          catatan: "Family dinner",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: null,
-          created_at: "2026-05-20T19:00:00Z",
-          nama_penyetor: null
-        },
-        {
-          id: 4,
-          user_id: 1,
-          tipe_transaksi: "pengeluaran",
-          nominal: 300000,
-          metode_pembayaran: "QRIS ShopeePay",
-          catatan: "Pizza lunch",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: null,
-          created_at: "2026-05-22T12:15:00Z",
-          nama_penyetor: null
-        },
-        {
-          id: 5,
-          user_id: 1,
-          tipe_transaksi: "pengeluaran",
-          nominal: 400000,
-          metode_pembayaran: "Transfer Mandiri",
-          catatan: "Roof leak repairs",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: null,
-          created_at: "2026-05-25T10:00:00Z",
-          nama_penyetor: null
-        },
-        {
-          id: 6,
-          user_id: 1,
-          tipe_transaksi: "pemasukan", // QRIS saving contribution
-          nominal: 14000000,
-          metode_pembayaran: "QRIS NabungYuk",
-          catatan: "Tabungan rutin Liburan",
-          bukti_transfer: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=200",
-          status: "berhasil",
-          target_id: 1, // Associated with Liburan Raja Ampat
-          created_at: "2026-05-26T16:45:00Z",
-          nama_penyetor: "Iyan Maulana"
-        },
-        {
-          id: 7,
-          user_id: 1,
-          tipe_transaksi: "pemasukan",
-          nominal: 500000,
-          metode_pembayaran: "QRIS NabungYuk",
-          catatan: "Tabungan saku iPhone baru",
-          bukti_transfer: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=200",
-          status: "pending", // Pending review
-          target_id: 2,
-          created_at: "2026-05-27T11:00:00Z",
-          nama_penyetor: "Iyan Maulana"
-        },
-        {
-          id: 8,
-          user_id: 1,
-          tipe_transaksi: "pemasukan",
-          nominal: 5000000,
-          metode_pembayaran: "Transfer BCA",
-          catatan: "Tabungan awal iPhone",
-          bukti_transfer: null,
-          status: "berhasil",
-          target_id: 2,
-          created_at: "2026-05-06T10:00:00Z",
-          nama_penyetor: "Iyan Maulana"
-        }
-      ],
-      target_tabungan: [
-        {
-          id: 1,
-          user_id: 1,
-          nama_target: "Liburan Raja Ampat",
-          target_nominal: 20000000,
-          saldo_terkumpul: 14000000,
-          deadline: "2026-12-25",
-          created_at: "2026-05-01T12:00:00Z"
-        },
-        {
-          id: 2,
-          user_id: 1,
-          nama_target: "Beli iPhone 17 Pro Max",
-          target_nominal: 25000000,
-          saldo_terkumpul: 5000000,
-          deadline: "2026-10-15",
-          created_at: "2026-05-05T09:00:00Z"
-        }
-      ]
-    };
-    saveDB(freshDb);
-    return freshDb;
-  }
-  return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
-}
-
-function saveDB(db: DatabaseSchema) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
-}
-
-// 2. Helper functions to verify authorization token
-function getUserByToken(req: express.Request): User | null {
+// Helper: get user by token (email)
+async function getUserByToken(req: express.Request) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
   const email = authHeader.replace("Bearer ", "").trim();
-  const db = getDB();
-  return db.users.find(u => u.email === email) || null;
+  const { data } = await supabase.from("users").select("*").eq("email", email).single();
+  return data;
 }
 
-// Recalculates goal balances recursively
-function updateGoalBalances(db: DatabaseSchema, userId: number) {
-  // Aggregate all transactions with status 'berhasil' linked to targets for this user
-  db.target_tabungan.forEach(tgt => {
-    if (tgt.user_id !== userId) return;
-    
-    // Sum user successful saving contributions (in our case, saving is recorded as "pemasukan" with a target_id)
-    const totalAdded = db.transaksi
-      .filter(tx => tx.user_id === userId && tx.status === "berhasil" && tx.target_id === tgt.id && tx.tipe_transaksi === "pemasukan")
-      .reduce((sum, tx) => sum + tx.nominal, 0);
-
-    // Align dynamically to the real ledger sum
-    tgt.saldo_terkumpul = totalAdded;
-  });
-}
-
-// ==========================================
-// API REST ROUTES
-// ==========================================
-
-// Authenticate / Registration Action
-app.post("/api/auth/register", (req, res) => {
+// REGISTER
+app.post("/api/auth/register", async (req, res) => {
   const { nama, email, password, foto_profile } = req.body;
-  if (!nama || !email || !password) {
+  if (!nama || !email || !password)
     return res.status(400).json({ error: "Kolom nama, email, dan password wajib diisi." });
-  }
 
-  const db = getDB();
-  const existing = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    return res.status(400).json({ error: "Email sudah terdaftar." });
-  }
+  const { data: existing } = await supabase.from("users").select("id").eq("email", email).single();
+  if (existing) return res.status(400).json({ error: "Email sudah terdaftar." });
 
-  const newUser: User = {
-    id: db.users.length > 0 ? Math.max(...db.users.map(u => u.id)) + 1 : 1,
-    nama,
-    email: email.toLowerCase(),
-    passwordHash: password, // Store password simply for high-fidelity demonstration
-    foto_profile: foto_profile || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200",
-    created_at: new Date().toISOString()
-  };
+  const { data: user, error } = await supabase.from("users").insert([{
+    nama, email: email.toLowerCase(), password,
+    foto_profile: foto_profile || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"
+  }]).select().single();
 
-  db.users.push(newUser);
-  
-  // Seed the new user with clean starter data matching the mobile dashboard visual nicely
-  const defaultTarget: TargetTabungan = {
-    id: db.target_tabungan.length > 0 ? Math.max(...db.target_tabungan.map(t => t.id)) + 1 : 1,
-    user_id: newUser.id,
-    nama_target: "Liburan Impian Raja Ampat",
-    target_nominal: 15000000,
-    saldo_terkumpul: 5000000,
-    deadline: "2026-12-25",
-    created_at: new Date().toISOString()
-  };
-  db.target_tabungan.push(defaultTarget);
+  if (error) return res.status(500).json({ error: error.message });
 
-  const starterTransactions: Transaksi[] = [
-    {
-      id: db.transaksi.length > 0 ? Math.max(...db.transaksi.map(t => t.id)) + 1 : 1,
-      user_id: newUser.id,
-      tipe_transaksi: "pemasukan",
-      nominal: 15000000,
-      metode_pembayaran: "Transfer Bank Mandiri",
-      catatan: "Saldo awal bergabung NabungYuk",
-      bukti_transfer: null,
-      status: "berhasil",
-      target_id: null,
-      created_at: new Date().toISOString(),
-      nama_penyetor: newUser.nama
-    },
-    {
-      id: db.transaksi.length > 0 ? Math.max(...db.transaksi.map(t => t.id)) + 2 : 2,
-      user_id: newUser.id,
-      tipe_transaksi: "pemasukan",
-      nominal: 5000000,
-      metode_pembayaran: "QRIS NabungYuk",
-      catatan: "Tabungan perdana Raja Ampat",
-      bukti_transfer: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=200",
-      status: "berhasil",
-      target_id: defaultTarget.id,
-      created_at: new Date(Date.now() - 3600000).toISOString(), // 1hr ago
-      nama_penyetor: newUser.nama
-    }
-  ];
-  db.transaksi.push(...starterTransactions);
-
-  saveDB(db);
-
-  // Return session mock token (which is the email)
-  res.status(201).json({
-    success: true,
-    token: newUser.email,
-    user: {
-      id: newUser.id,
-      nama: newUser.nama,
-      email: newUser.email,
-      foto_profile: newUser.foto_profile,
-    }
-  });
+  res.status(201).json({ success: true, token: user.email, user: { id: user.id, nama: user.nama, email: user.email, foto_profile: user.foto_profile } });
 });
 
-// Auth Login Action
-app.post("/api/auth/login", (req, res) => {
+// LOGIN
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (!email || !password)
     return res.status(400).json({ error: "Email dan password wajib diisi." });
-  }
 
-  const db = getDB();
-  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  
-  if (!user || user.passwordHash !== password) {
+  const { data: user } = await supabase.from("users").select("*").eq("email", email.toLowerCase()).single();
+  if (!user || user.password !== password)
     return res.status(401).json({ error: "Email atau password salah." });
-  }
 
-  res.json({
-    success: true,
-    token: user.email,
-    user: {
-      id: user.id,
-      nama: user.nama,
-      email: user.email,
-      foto_profile: user.foto_profile,
-    }
-  });
+  res.json({ success: true, token: user.email, user: { id: user.id, nama: user.nama, email: user.email, foto_profile: user.foto_profile } });
 });
 
-// Authentication Me Profile endpoint
-app.get("/api/auth/me", (req, res) => {
-  const user = getUserByToken(req);
-  if (!user) {
-    return res.status(401).json({ error: "Sesi tidak valid atau telah berakhir." });
-  }
-  res.json({
-    success: true,
-    user: {
-      id: user.id,
-      nama: user.nama,
-      email: user.email,
-      foto_profile: user.foto_profile
-    }
-  });
+// ME
+app.get("/api/auth/me", async (req, res) => {
+  const user = await getUserByToken(req);
+  if (!user) return res.status(401).json({ error: "Sesi tidak valid." });
+  res.json({ success: true, user: { id: user.id, nama: user.nama, email: user.email, foto_profile: user.foto_profile } });
 });
 
-// Get Categories Route
-app.get("/api/kategori", (req, res) => {
-  const db = getDB();
-  res.json({ success: true, kategori: db.kategori });
+// KATEGORI
+app.get("/api/kategori", async (req, res) => {
+  const { data } = await supabase.from("kategori").select("*");
+  res.json({ success: true, kategori: data });
 });
 
-// Target Tabungan - List for authenticated user
-app.get("/api/target", (req, res) => {
-  const user = getUserByToken(req);
+// TARGET - GET
+app.get("/api/target", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const db = getDB();
-  updateGoalBalances(db, user.id);
-  saveDB(db);
-
-  const targets = db.target_tabungan.filter(t => t.user_id === user.id);
-  res.json({ success: true, targets });
+  const { data } = await supabase.from("target_tabungan").select("*").eq("user_id", user.id);
+  res.json({ success: true, targets: data });
 });
 
-// Create Target Tabungan
-app.post("/api/target", (req, res) => {
-  const user = getUserByToken(req);
+// TARGET - CREATE
+app.post("/api/target", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
-
   const { nama_target, target_nominal, deadline } = req.body;
-  if (!nama_target || !target_nominal || !deadline) {
+  if (!nama_target || !target_nominal || !deadline)
     return res.status(400).json({ error: "Semua kolom target wajib diisi." });
-  }
 
-  const db = getDB();
-  const newTarget: TargetTabungan = {
-    id: db.target_tabungan.length > 0 ? Math.max(...db.target_tabungan.map(t => t.id)) + 1 : 1,
-    user_id: user.id,
-    nama_target,
-    target_nominal: Number(target_nominal),
-    saldo_terkumpul: 0,
-    deadline,
-    created_at: new Date().toISOString()
-  };
+  const { data, error } = await supabase.from("target_tabungan").insert([{
+    user_id: user.id, nama_target, target_nominal: Number(target_nominal), saldo_terkumpul: 0, deadline
+  }]).select().single();
 
-  db.target_tabungan.push(newTarget);
-  saveDB(db);
-
-  res.status(201).json({ success: true, target: newTarget });
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json({ success: true, target: data });
 });
 
-// Delete target
-app.delete("/api/target/:id", (req, res) => {
-  const user = getUserByToken(req);
+// TARGET - DELETE
+app.delete("/api/target/:id", async (req, res) => {
+  const user = await getUserByToken(req);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  const { error } = await supabase.from("target_tabungan").delete().eq("id", Number(req.params.id)).eq("user_id", user.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true, message: "Target berhasil dihapus." });
+});
+
+// TRANSAKSI - GET
+app.get("/api/transaksi", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const targetId = Number(req.params.id);
-  const db = getDB();
-  const initialLength = db.target_tabungan.length;
-  
-  db.target_tabungan = db.target_tabungan.filter(t => !(t.id === targetId && t.user_id === user.id));
-  
-  if (db.target_tabungan.length === initialLength) {
-    return res.status(404).json({ error: "Target tidak ditemukan" });
-  }
+  let query = supabase.from("transaksi").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+  if (req.query.tipe) query = query.eq("tipe_transaksi", req.query.tipe as string);
+  if (req.query.target_id) query = query.eq("target_id", Number(req.query.target_id));
 
-  // Set any associated transaction's target_id to null
-  db.transaksi.forEach(tx => {
-    if (tx.target_id === targetId) {
-      tx.target_id = null;
-    }
-  });
-
-  saveDB(db);
-  res.json({ success: true, message: "Target tabungan berhasil dihapus." });
+  const { data } = await query;
+  res.json({ success: true, transaksi: data });
 });
 
-// Create Transaksi (Menabung / Catat pengeluaran)
-app.post("/api/transaksi", (req, res) => {
-  const user = getUserByToken(req);
+// TRANSAKSI - CREATE
+app.post("/api/transaksi", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const { tipe_transaksi, nominal, metode_pembayaran, catatan, bukti_transfer, target_id, nama_penyetor } = req.body;
-  
-  if (!tipe_transaksi || !nominal || !metode_pembayaran) {
+  if (!tipe_transaksi || !nominal || !metode_pembayaran)
     return res.status(400).json({ error: "Tipe, nominal, dan metode pembayaran wajib diisi." });
-  }
 
-  const db = getDB();
-  const parsedTargetId = target_id ? Number(target_id) : null;
-
-  // Real-time status logic depending on method:
-  // Transfer upload/QRIS upload starts as pending, others can be auto success for presentation
   const isDigitalUpload = metode_pembayaran.toLowerCase().includes("qris") || metode_pembayaran.toLowerCase().includes("transfer");
   const status = isDigitalUpload && bukti_transfer ? "pending" : "berhasil";
 
-  const newTx: Transaksi = {
-    id: db.transaksi.length > 0 ? Math.max(...db.transaksi.map(t => t.id)) + 1 : 1,
-    user_id: user.id,
-    tipe_transaksi: tipe_transaksi as "pemasukan" | "pengeluaran",
-    nominal: Number(nominal),
-    metode_pembayaran,
-    catatan: catatan || null,
-    bukti_transfer: bukti_transfer || null,
-    status: status,
-    target_id: parsedTargetId,
-    created_at: new Date().toISOString(),
+  const { data, error } = await supabase.from("transaksi").insert([{
+    user_id: user.id, tipe_transaksi, nominal: Number(nominal), metode_pembayaran,
+    catatan: catatan || null, bukti_transfer: bukti_transfer || null,
+    status, target_id: target_id ? Number(target_id) : null,
     nama_penyetor: tipe_transaksi === "pemasukan" ? (nama_penyetor || user.nama) : null
-  };
+  }]).select().single();
 
-  db.transaksi.push(newTx);
-  
-  // Directly add to collection if success
-  if (status === "berhasil") {
-    updateGoalBalances(db, user.id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Update saldo target
+  if (status === "berhasil" && target_id) {
+    const { data: txList } = await supabase.from("transaksi").select("nominal").eq("target_id", Number(target_id)).eq("status", "berhasil").eq("tipe_transaksi", "pemasukan");
+    const total = txList?.reduce((sum, t) => sum + t.nominal, 0) || 0;
+    await supabase.from("target_tabungan").update({ saldo_terkumpul: total }).eq("id", Number(target_id));
   }
 
-  saveDB(db);
-  res.status(201).json({ success: true, transaksi: newTx });
+  res.status(201).json({ success: true, transaksi: data });
 });
 
-// Retrieve Transactions List for specific user (supports search and dynamic category icon matching)
-app.get("/api/transaksi", (req, res) => {
-  const user = getUserByToken(req);
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const { search, tipe, target_id } = req.query;
-  const db = getDB();
-
-  let list = db.transaksi.filter(t => t.user_id === user.id);
-
-  if (search) {
-    const q = String(search).toLowerCase();
-    list = list.filter(t => 
-      (t.catatan && t.catatan.toLowerCase().includes(q)) || 
-      t.metode_pembayaran.toLowerCase().includes(q)
-    );
-  }
-
-  if (tipe && (tipe === "pemasukan" || tipe === "pengeluaran")) {
-    list = list.filter(t => t.tipe_transaksi === tipe);
-  }
-
-  if (target_id) {
-    list = list.filter(t => t.target_id === Number(target_id));
-  }
-
-  // Sort descending by date
-  list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  res.json({ success: true, transaksi: list });
-});
-
-// Update Transaksi Status (Approved / Reject proof of payment)
-app.put("/api/transaksi/:id/status", (req, res) => {
-  const user = getUserByToken(req);
+// TRANSAKSI - UPDATE STATUS
+app.put("/api/transaksi/:id/status", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const { status } = req.body;
-  if (!status || !["pending", "berhasil", "gagal"].includes(status)) {
-    return res.status(400).json({ error: "Status must be pending, berhasil, or gagal" });
-  }
-
-  const db = getDB();
-  const tx = db.transaksi.find(t => t.id === Number(req.params.id) && t.user_id === user.id);
-  if (!tx) {
-    return res.status(404).json({ error: "Transaksi tidak ditemukan." });
-  }
-
-  tx.status = status as "pending" | "berhasil" | "gagal";
-  updateGoalBalances(db, user.id);
-  saveDB(db);
-
-  res.json({ success: true, transaksi: tx });
+  const { data, error } = await supabase.from("transaksi").update({ status }).eq("id", Number(req.params.id)).eq("user_id", user.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true, transaksi: data });
 });
 
-// Delete Transaction
-app.delete("/api/transaksi/:id", (req, res) => {
-  const user = getUserByToken(req);
+// TRANSAKSI - DELETE
+app.delete("/api/transaksi/:id", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const db = getDB();
-  const txId = Number(req.params.id);
-  const initialLength = db.transaksi.length;
-
-  db.transaksi = db.transaksi.filter(t => !(t.id === txId && t.user_id === user.id));
-
-  if (db.transaksi.length === initialLength) {
-    return res.status(404).json({ error: "Transaksi tidak ditemukan." });
-  }
-
-  updateGoalBalances(db, user.id);
-  saveDB(db);
-
+  const { error } = await supabase.from("transaksi").delete().eq("id", Number(req.params.id)).eq("user_id", user.id);
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ success: true, message: "Transaksi berhasil dihapus." });
 });
 
-// Dashboard Overview aggregates
-app.get("/api/dashboard/summary", (req, res) => {
-  const user = getUserByToken(req);
+// DASHBOARD
+app.get("/api/dashboard/summary", async (req, res) => {
+  const user = await getUserByToken(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const db = getDB();
-  updateGoalBalances(db, user.id);
-  saveDB(db);
+  const { data: transactions } = await supabase.from("transaksi").select("*").eq("user_id", user.id);
+  const { data: targets } = await supabase.from("target_tabungan").select("*").eq("user_id", user.id);
 
-  const transactions = db.transaksi.filter(t => t.user_id === user.id);
-  const targets = db.target_tabungan.filter(t => t.user_id === user.id);
-
-  // Math totals:
-  // Income: pemasukan that is 'berhasil'
-  const totalIncome = transactions
-    .filter(t => t.tipe_transaksi === "pemasukan" && t.status === "berhasil")
-    .reduce((sum, t) => sum + t.nominal, 0);
-
-  // Expenses: pengeluaran that is 'berhasil'
-  const totalExpenses = transactions
-    .filter(t => t.tipe_transaksi === "pengeluaran" && t.status === "berhasil")
-    .reduce((sum, t) => sum + t.nominal, 0);
-
-  // Active savings balance = total income - total expenses
+  const totalIncome = transactions?.filter(t => t.tipe_transaksi === "pemasukan" && t.status === "berhasil").reduce((sum, t) => sum + t.nominal, 0) || 0;
+  const totalExpenses = transactions?.filter(t => t.tipe_transaksi === "pengeluaran" && t.status === "berhasil").reduce((sum, t) => sum + t.nominal, 0) || 0;
   const activeBalance = totalIncome - totalExpenses;
-
-  // Let's create an elegant historical graph breakdown for the chart:
-  // Show last 6 days or months
-  // We can group cashflow
-  const activeTargetsCount = targets.length;
-  // Calculate aggregate percentage
-  let overallTargetNominal = targets.reduce((sum, t) => sum + t.target_nominal, 0);
-  let overallSavedNominal = targets.reduce((sum, t) => sum + t.saldo_terkumpul, 0);
-  let overallPercent = overallTargetNominal > 0 ? Math.round((overallSavedNominal / overallTargetNominal) * 100) : 0;
+  const overallTargetNominal = targets?.reduce((sum, t) => sum + t.target_nominal, 0) || 0;
+  const overallSavedNominal = targets?.reduce((sum, t) => sum + t.saldo_terkumpul, 0) || 0;
+  const overallPercent = overallTargetNominal > 0 ? Math.round((overallSavedNominal / overallTargetNominal) * 100) : 0;
 
   res.json({
     success: true,
-    summary: {
-      activeBalance,
-      totalIncome,
-      totalExpenses,
-      overallPercent,
-      activeTargetsCount,
-      overallTargetNominal,
-      overallSavedNominal,
-    },
-    transactions: transactions.slice(0, 10), // Limit 10 for overview
-    targets
+    summary: { activeBalance, totalIncome, totalExpenses, overallPercent, activeTargetsCount: targets?.length || 0, overallTargetNominal, overallSavedNominal },
+    transactions: transactions?.slice(0, 10) || [],
+    targets: targets || []
   });
 });
 
-// GET QRIS Image dynamically (ensuring real-time updates without Vite dev-server cache)
+// QRIS
 app.get("/api/qris/image", (req, res) => {
-  const customPath = path.join(process.cwd(), "src/assets/images/qris_custom.png");
   const defaultPath = path.join(process.cwd(), "src/assets/images/qris_payment_code_1779963413005.png");
-
-  if (fs.existsSync(customPath)) {
-    res.sendFile(customPath);
-  } else if (fs.existsSync(defaultPath)) {
-    res.sendFile(defaultPath);
-  } else {
-    res.status(404).send("QRIS image tidak ditemukan.");
-  }
+  res.sendFile(defaultPath);
 });
 
-// POST Upload custom QRIS base64 image (shared across all dashboards)
-app.post("/api/qris/upload", (req, res) => {
-  const { image } = req.body;
-  if (!image) {
-    return res.status(400).json({ error: "Data gambar QRIS wajib disertakan." });
-  }
-
-  try {
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
-
-    const customPath = path.join(process.cwd(), "src/assets/images/qris_custom.png");
-    
-    // Ensure parent directory exists
-    fs.mkdirSync(path.dirname(customPath), { recursive: true });
-    fs.writeFileSync(customPath, buffer);
-
-    res.json({ success: true, message: "QRIS berhasil disimpan dan dapat dipindai di semua dashboard!" });
-  } catch (error: any) {
-    res.status(500).json({ error: "Gagal menyimpan QRIS: " + error.message });
-  }
-});
-
-// ==========================================
-// VITE DEV SERVER OR STATIC PRODUCTION BUILD HANDLERS
-// ==========================================
-
+// START SERVER
 async function start() {
   if (process.env.NODE_ENV !== "production") {
-    // Development Mode
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   } else {
-    // Production Mode
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    app.get("*", (req, res) => res.sendFile(path.join(distPath, "index.html")));
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[NabungYuk Server] Running at http://localhost:${PORT}`);
-  });
+  app.listen(PORT, "0.0.0.0", () => console.log(`[NabungYuk] Running at http://localhost:${PORT}`));
 }
 
-start().catch((err) => {
-  console.error("Failed to start server:", err);
-});
+start().catch(console.error);
