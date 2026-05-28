@@ -1,0 +1,6 @@
+{
+  "name": "NabungYuk",
+  "description": "Aplikasi Tabungan Digital Modern berbasis Fintech Mobile UI",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

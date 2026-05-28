@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background-color: #2D1F1B;
+  color: #FFF7F5;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  --primary: #FF8A7A;
+  --secondary: #FFD0C7;
+  --dark-bg: #2D1F1B;
+  --card-bg: #FFF7F5;
+  --text-dark: #2B2B2B;
+  --glass: rgba(255, 247, 245, 0.85);
+}
+
+.coral-gradient {
+  background: linear-gradient(135deg, #FF8A7A 0%, #FFD0C7 100%);
+}
+
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.glass-card-dark {
+  background: rgba(45, 31, 27, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.soft-shadow {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav-shadow {
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+}
+
+/* Animations & Custom layouts mimicking design */
+.pulse-glow {
+  animation: pulseGrad 3s infinite ease-in-out;
+}
+
+@keyframes pulseGrad {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 138, 122, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(255, 138, 122, 0.35);
+  }
+}
+
+/* Glassmorphism classes */
+.glass-panel {
+  background: rgba(255, 247, 245, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 247, 245, 0.12);
+}
+
+.glass-panel-heavy {
+  background: rgba(45, 31, 27, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 138, 122, 0.2);
+}
+
+/* Thick rounded cards */
+.rounded-fintech {
+  border-radius: 32px;
+}
+
+/* Scrollbar tweaks */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(45, 31, 27, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 138, 122, 0.25);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 138, 122, 0.4);
+}

@@ -1,0 +1,175 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "nama": "Iyan Maulana",
+      "email": "demo@nabungyuk.id",
+      "passwordHash": "password123",
+      "foto_profile": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
+      "created_at": "2026-05-01T00:00:00.000Z"
+    }
+  ],
+  "kategori": [
+    {
+      "id": 1,
+      "nama_kategori": "Holiday",
+      "icon": "plane"
+    },
+    {
+      "id": 2,
+      "nama_kategori": "Food",
+      "icon": "utensils"
+    },
+    {
+      "id": 3,
+      "nama_kategori": "Utilities",
+      "icon": "file-text"
+    },
+    {
+      "id": 4,
+      "nama_kategori": "Coffee",
+      "icon": "coffee"
+    },
+    {
+      "id": 5,
+      "nama_kategori": "Shopping",
+      "icon": "shopping-bag"
+    },
+    {
+      "id": 6,
+      "nama_kategori": "Salary",
+      "icon": "dollar-sign"
+    },
+    {
+      "id": 7,
+      "nama_kategori": "Others",
+      "icon": "help-circle"
+    }
+  ],
+  "transaksi": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "tipe_transaksi": "pemasukan",
+      "nominal": 95000000,
+      "metode_pembayaran": "Transfer Mandiri",
+      "catatan": "Gaji Utama Mei",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": null,
+      "created_at": "2026-05-02T08:30:00Z",
+      "nama_penyetor": "Iyan Maulana"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "tipe_transaksi": "pengeluaran",
+      "nominal": 400000,
+      "metode_pembayaran": "QRIS GoPay",
+      "catatan": "Uniqlo flannel shirt",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": null,
+      "created_at": "2026-05-18T14:20:00Z",
+      "nama_penyetor": null
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "tipe_transaksi": "pengeluaran",
+      "nominal": 2000000,
+      "metode_pembayaran": "Transfer BCA",
+      "catatan": "Family dinner",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": null,
+      "created_at": "2026-05-20T19:00:00Z",
+      "nama_penyetor": null
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "tipe_transaksi": "pengeluaran",
+      "nominal": 300000,
+      "metode_pembayaran": "QRIS ShopeePay",
+      "catatan": "Pizza lunch",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": null,
+      "created_at": "2026-05-22T12:15:00Z",
+      "nama_penyetor": null
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "tipe_transaksi": "pengeluaran",
+      "nominal": 400000,
+      "metode_pembayaran": "Transfer Mandiri",
+      "catatan": "Roof leak repairs",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": null,
+      "created_at": "2026-05-25T10:00:00Z",
+      "nama_penyetor": null
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "tipe_transaksi": "pemasukan",
+      "nominal": 14000000,
+      "metode_pembayaran": "QRIS NabungYuk",
+      "catatan": "Tabungan rutin Liburan",
+      "bukti_transfer": "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=200",
+      "status": "berhasil",
+      "target_id": 1,
+      "created_at": "2026-05-26T16:45:00Z",
+      "nama_penyetor": "Iyan Maulana"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "tipe_transaksi": "pemasukan",
+      "nominal": 500000,
+      "metode_pembayaran": "QRIS NabungYuk",
+      "catatan": "Tabungan saku iPhone baru",
+      "bukti_transfer": "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=200",
+      "status": "pending",
+      "target_id": 2,
+      "created_at": "2026-05-27T11:00:00Z",
+      "nama_penyetor": "Iyan Maulana"
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "tipe_transaksi": "pemasukan",
+      "nominal": 5000000,
+      "metode_pembayaran": "Transfer BCA",
+      "catatan": "Tabungan awal iPhone",
+      "bukti_transfer": null,
+      "status": "berhasil",
+      "target_id": 2,
+      "created_at": "2026-05-06T10:00:00Z",
+      "nama_penyetor": "Iyan Maulana"
+    }
+  ],
+  "target_tabungan": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "nama_target": "Liburan Raja Ampat",
+      "target_nominal": 20000000,
+      "saldo_terkumpul": 14000000,
+      "deadline": "2026-12-25",
+      "created_at": "2026-05-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "nama_target": "Beli iPhone 17 Pro Max",
+      "target_nominal": 25000000,
+      "saldo_terkumpul": 5000000,
+      "deadline": "2026-10-15",
+      "created_at": "2026-05-05T09:00:00Z"
+    }
+  ]
+}
